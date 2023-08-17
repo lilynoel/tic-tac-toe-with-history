@@ -8,6 +8,7 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<GameList />} />
+          {/* dynamic id to reflect content item id. */}
           <Route path="/games/:id" element={<Game />} />
         </Routes>
       </BrowserRouter>

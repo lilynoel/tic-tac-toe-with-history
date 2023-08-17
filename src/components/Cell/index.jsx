@@ -2,6 +2,7 @@ import { checkWinner, checkDraw } from "../../utilities/game-utils";
 import styles from "./styles.module.scss";
 
 const Cell = ({ symbol, coordinate, gameState, setGameState }) => {
+  // not quite finished. Needs to create move. 
   const updateBoard = (index) => {
     if (gameState.winner) {
       return;

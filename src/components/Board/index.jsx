@@ -1,4 +1,5 @@
 import Cell from "../Cell";
+// using sass for styles in this project.
 import styles from "./styles.module.scss";
 
 const Board = ({ board, gameState, setGameState }) => {
@@ -9,6 +10,7 @@ const Board = ({ board, gameState, setGameState }) => {
           key={index}
           coordinate={index}
           symbol={symbol}
+          // passing game state and setter into cell. 
           gameState={gameState}
           setGameState={setGameState}
         />
