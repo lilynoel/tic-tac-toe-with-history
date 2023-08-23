@@ -26,7 +26,6 @@ export function checkWinner(board) {
 
 // Checks for 3 consecutive horizontal characters
 function checkHorizontal(char, board) {
-  console.log("This runs");
   if (board[0] === char && board[1] === char && board[2] === char) {
     return true;
   }
@@ -40,7 +39,6 @@ function checkHorizontal(char, board) {
 
 // Checks for 3 consecutive vertical characters
 function checkVertical(char, board) {
-  console.log("This runs");
   if (board[0] === char && board[3] === char && board[6] === char) {
     return true;
   }
@@ -54,7 +52,6 @@ function checkVertical(char, board) {
 
 // Checks for 3 consecutive diagonal characters
 function checkDiagonal(char, board) {
-  console.log("This runs");
   if (board[0] === char && board[4] === char && board[8] === char) {
     return true;
   }
