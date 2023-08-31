@@ -1,8 +1,9 @@
 import { checkWinner, checkDraw } from "../../utilities/game-utils";
+import { createMove } from "../../utilities/kontent-utils";
 import styles from "./styles.module.scss";
 
 const Cell = ({ symbol, coordinate, gameState, setGameState }) => {
-  // not quite finished. Needs to create move. 
+  // not quite finished. Needs to create move.
   const updateBoard = (index) => {
     if (gameState.winner) {
       return;
@@ -17,7 +18,7 @@ const Cell = ({ symbol, coordinate, gameState, setGameState }) => {
     if (winner || draw) {
       return;
     }
-    console.log("clicked! " + coordinate);
+    createMove(gameState.id, coordinate, gameState.currentPlayer);
   };
   return (
     <div onClick={() => updateBoard(coordinate)} className={styles.cell}>
