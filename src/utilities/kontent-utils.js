@@ -71,6 +71,8 @@ export async function createNewGame(num) {
       collection: { codename: "games_collection" },
     })
     .toPromise();
+  console.log(response);
+
   const { id } = response.data;
   const defaultState = {
     draw: "false",
@@ -86,8 +88,11 @@ export async function createNewGame(num) {
 
 // function to generate new game number
 export function nextGameNum(games) {
-  const last = games[games.length - 1];
-  const lastNum = last.codename.split("_")[1];
+  const nums = games.map((game) => {
+    const num = parseInt(game.name.split(" ")[1]);
+    return num;
+  });
+  const lastNum = Math.max(...nums);
   return parseInt(lastNum) + 1;
 }
 
@@ -120,5 +125,85 @@ export async function updateGameById(id, gameState) {
 }
 
 export async function createMove(gameId, coordinate, symbol) {
-  console.log("Created move!: ",  gameId,  coordinate, symbol);
+  try {
+    const response = await client
+      .addContentItem()
+      .withData({
+        name: "Test Move",
+        coordinate: coordinate,
+        symbol: symbol,
+        type: { codename: "move" },
+        collection: { codename: "default" },
+      })
+      .toPromise();
+    const { id } = response.data;
+    const move = updateMoveById(id, { symbol, coordinate });
+    linkMoveToGame(gameId, id);
+    console.log(response);
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+async function updateMoveById(id, data) {
+  const response = await client
+    .upsertLanguageVariant()
+    .byItemId(id)
+    .byLanguageCodename("default")
+    .withData((builder) => {
+      return {
+        elements: [
+          builder.textElement({
+            element: { codename: "symbol" },
+            value: data.symbol,
+          }),
+          builder.textElement({
+            element: { codename: "coordinate" },
+            value: data.coordinate,
+          }),
+        ],
+      };
+    })
+    .toPromise();
+  console.log(response);
+}
+
+async function publishGameById(gameId) {
+  const response = await client
+    .publishLanguageVariant()
+    .byItemId(gameId)
+    .byLanguageCodename("default")
+    .withoutData()
+    .toPromise();
+  console.log(response);
+}
+
+async function createNewVersion(gameId) {
+  const response = await client
+    .createNewVersionOfLanguageVariant()
+    .byItemId(gameId)
+    .byLanguageCodename("default")
+    .toPromise();
+  console.log(response);
+}
+
+async function linkMoveToGame(gameId, moveId) {
+  await createNewVersion(gameId);
+  const response = await client
+    .upsertLanguageVariant()
+    .byItemId(gameId)
+    .byLanguageCodename("default")
+    .withData((builder) => {
+      return {
+        elements: [
+          builder.linkedItemsElement({
+            element: { codename: "move" },
+            value: [{ id: moveId }],
+          }),
+        ],
+      };
+    })
+    .toPromise();
+  await publishGameById(gameId);
+  console.log(response);
 }

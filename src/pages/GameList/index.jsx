@@ -6,6 +6,7 @@ import {
 } from "../../utilities/kontent-utils";
 import { Link } from "react-router-dom";
 import { deliveryClient } from "../../config/client";
+import { sortByGameNumber } from "../../utilities/array-utils";
 
 const GameList = () => {
   const [games, setGames] = useState([]);
@@ -19,7 +20,7 @@ const GameList = () => {
   console.log(games);
   useEffect(() => {
     // fetch all games from collection and set into state.
-    getAllGames().then((response) => setGames(response));
+    getAllGames().then((response) => setGames(response.sort(sortByGameNumber)));
     // this is a hack to refresh page. will fix :-)
     deliveryClient
       // retrieves game 1, and all linked items attached to game 1.
