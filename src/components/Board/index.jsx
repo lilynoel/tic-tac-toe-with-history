@@ -3,7 +3,7 @@ import Cell from "../Cell";
 import styles from "./styles.module.scss";
 
 const Board = ({ board, gameState, setGameState, id }) => {
-  console.log(id);
+  console.log("Rendered board!");
   return (
     <section className={styles.board}>
       {board.map((symbol, index) => (

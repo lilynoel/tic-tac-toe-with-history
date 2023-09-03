@@ -1,4 +1,5 @@
 import client, { deliveryClient } from "../config/client";
+import { v4 as uuidv4 } from "uuid";
 
 export async function getAllGames() {
   // const allItems = await client.listContentItems().toPromise();
@@ -20,6 +21,7 @@ export async function getAllGames() {
 export async function getGameById(codename) {
   const response = await deliveryClient
     .item(codename)
+    // linked items are being resolved here with the depthParameter
     .depthParameter(1)
     .toPromise();
   const { elements, system } = response.data.item;
@@ -83,6 +85,7 @@ export async function createNewGame(num) {
   };
   // updates content of freshly created game.
   const game = await updateGameById(id, defaultState);
+  await publishById(id);
   return game;
 }
 
@@ -124,12 +127,13 @@ export async function updateGameById(id, gameState) {
   return response;
 }
 
-export async function createMove(gameId, coordinate, symbol) {
+export async function createMove(gameId, coordinate, symbol, gameState) {
+  console.log(gameState);
   try {
     const response = await client
       .addContentItem()
       .withData({
-        name: "Test Move",
+        name: uuidv4(),
         coordinate: coordinate,
         symbol: symbol,
         type: { codename: "move" },
@@ -138,7 +142,7 @@ export async function createMove(gameId, coordinate, symbol) {
       .toPromise();
     const { id } = response.data;
     const move = updateMoveById(id, { symbol, coordinate });
-    linkMoveToGame(gameId, id);
+    linkMoveToGame(gameId, id, gameState);
     console.log(response);
   } catch (e) {
     console.log(e);
@@ -168,10 +172,10 @@ async function updateMoveById(id, data) {
   console.log(response);
 }
 
-async function publishGameById(gameId) {
+async function publishById(id) {
   const response = await client
     .publishLanguageVariant()
-    .byItemId(gameId)
+    .byItemId(id)
     .byLanguageCodename("default")
     .withoutData()
     .toPromise();
@@ -184,11 +188,21 @@ async function createNewVersion(gameId) {
     .byItemId(gameId)
     .byLanguageCodename("default")
     .toPromise();
-  console.log(response);
+  return response;
 }
 
-async function linkMoveToGame(gameId, moveId) {
+async function linkMoveToGame(gameId, moveId, gameState) {
+  const gameResponse = await client
+    .viewLanguageVariant()
+    .byItemId(gameId)
+    .byLanguageCodename("default")
+    .toPromise();
+  const moves = gameResponse.data.elements[3].value.map((move) => move.id);
+  moves.push(moveId);
   await createNewVersion(gameId);
+  console.log(moves);
+  const { currentPlayer } = gameState;
+  const newPlayer = currentPlayer === "X" ? "O" : "X";
   const response = await client
     .upsertLanguageVariant()
     .byItemId(gameId)
@@ -198,12 +212,53 @@ async function linkMoveToGame(gameId, moveId) {
         elements: [
           builder.linkedItemsElement({
             element: { codename: "move" },
-            value: [{ id: moveId }],
+            value: moves.map((id) => ({ id })),
+          }),
+          builder.textElement({
+            element: { codename: "current_player" },
+            value: newPlayer,
           }),
         ],
       };
     })
     .toPromise();
-  await publishGameById(gameId);
+  await publishById(gameId);
+  await publishById(moveId);
   console.log(response);
+}
+
+export async function updateGameToWon(gameId, symbol) {
+  const response = await client
+    .upsertLanguageVariant()
+    .byItemId(id)
+    .byLanguageCodename("default")
+    .withData((builder) => {
+      return {
+        elements: [
+          builder.textElement({
+            element: { codename: "winner" },
+            value: symbol,
+          }),
+        ],
+      };
+    })
+    .toPromise();
+}
+
+export async function updateGameToDraw(gameId) {
+  const response = await client
+    .upsertLanguageVariant()
+    .byItemId(id)
+    .byLanguageCodename("default")
+    .withData((builder) => {
+      return {
+        elements: [
+          builder.textElement({
+            element: { codename: "draw" },
+            value: true,
+          }),
+        ],
+      };
+    })
+    .toPromise();
 }
