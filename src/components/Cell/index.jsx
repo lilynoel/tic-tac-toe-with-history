@@ -1,5 +1,9 @@
 import { checkWinner, checkDraw } from "../../utilities/game-utils";
-import { createMove, updateGameToWon } from "../../utilities/kontent-utils";
+import {
+  createMove,
+  updateGameToDraw,
+  updateGameToWon,
+} from "../../utilities/kontent-utils";
 import styles from "./styles.module.scss";
 
 const Cell = ({ symbol, coordinate, gameState, setGameState }) => {
@@ -14,12 +18,13 @@ const Cell = ({ symbol, coordinate, gameState, setGameState }) => {
     }
     copy[index] = gameState.currentPlayer;
 
-    await createMove(
+    const response = await createMove(
       gameState.id,
       coordinate,
       gameState.currentPlayer,
       gameState
     );
+    console.log(response, gameState.id);
     const winner = checkWinner(copy);
     const draw = checkDraw(copy);
     if (winner) {
@@ -36,7 +41,7 @@ const Cell = ({ symbol, coordinate, gameState, setGameState }) => {
         board: copy,
         draw: "true",
       };
-      await updateGameById(gameState.id, updatedState);
+      await updateGameToDraw(gameState.id);
       return setGameState(updatedState);
     } else {
       setGameState({

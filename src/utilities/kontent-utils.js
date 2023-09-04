@@ -7,7 +7,6 @@ export async function getAllGames() {
   // const games = allItems.data.items.filter(
   //   (item) => item.collection.id === "e3cca0c7-4e62-42fa-9d6a-222137b3a2e7"
   // );
-  // console.log(games);
   const response = await deliveryClient
     .items()
     .equalsFilter("system.type", "game")
@@ -73,7 +72,6 @@ export async function createNewGame(num) {
       collection: { codename: "games_collection" },
     })
     .toPromise();
-  console.log(response);
 
   const { id } = response.data;
   const defaultState = {
@@ -128,7 +126,6 @@ export async function updateGameById(id, gameState) {
 }
 
 export async function createMove(gameId, coordinate, symbol, gameState) {
-  console.log(gameState);
   try {
     const response = await client
       .addContentItem()
@@ -142,8 +139,8 @@ export async function createMove(gameId, coordinate, symbol, gameState) {
       .toPromise();
     const { id } = response.data;
     const move = updateMoveById(id, { symbol, coordinate });
-    linkMoveToGame(gameId, id, gameState);
-    console.log(response);
+    const updatedGameResponse = await linkMoveToGame(gameId, id, gameState);
+    return updatedGameResponse;
   } catch (e) {
     console.log(e);
   }
@@ -169,7 +166,6 @@ async function updateMoveById(id, data) {
       };
     })
     .toPromise();
-  console.log(response);
 }
 
 async function publishById(id) {
@@ -179,7 +175,7 @@ async function publishById(id) {
     .byLanguageCodename("default")
     .withoutData()
     .toPromise();
-  console.log(response);
+  return response;
 }
 
 async function createNewVersion(gameId) {
@@ -200,7 +196,6 @@ async function linkMoveToGame(gameId, moveId, gameState) {
   const moves = gameResponse.data.elements[3].value.map((move) => move.id);
   moves.push(moveId);
   await createNewVersion(gameId);
-  console.log(moves);
   const { currentPlayer } = gameState;
   const newPlayer = currentPlayer === "X" ? "O" : "X";
   const response = await client
@@ -222,15 +217,16 @@ async function linkMoveToGame(gameId, moveId, gameState) {
       };
     })
     .toPromise();
-  await publishById(gameId);
+  const newPublishedGameResponse = await publishById(gameId);
   await publishById(moveId);
-  console.log(response);
+  return newPublishedGameResponse;
 }
 
 export async function updateGameToWon(gameId, symbol) {
+  await createNewVersion(gameId);
   const response = await client
     .upsertLanguageVariant()
-    .byItemId(id)
+    .byItemId(gameId)
     .byLanguageCodename("default")
     .withData((builder) => {
       return {
@@ -243,22 +239,25 @@ export async function updateGameToWon(gameId, symbol) {
       };
     })
     .toPromise();
+  await publishById(gameId);
 }
 
 export async function updateGameToDraw(gameId) {
+  await createNewVersion(gameId);
   const response = await client
     .upsertLanguageVariant()
-    .byItemId(id)
+    .byItemId(gameId)
     .byLanguageCodename("default")
     .withData((builder) => {
       return {
         elements: [
           builder.textElement({
             element: { codename: "draw" },
-            value: true,
+            value: "true",
           }),
         ],
       };
     })
     .toPromise();
+  await publishById(gameId);
 }

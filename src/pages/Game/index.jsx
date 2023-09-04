@@ -15,11 +15,14 @@ function Game() {
       setGameState(response);
     });
   }, [id]);
-  console.log(gameState);
   return (
     <>
       <h1> This is the game page! </h1>
-      {gameState && <h2> Current Player: {gameState.currentPlayer}</h2>}
+      {gameState && !gameState.winner && (
+        <h2> Current Player: {gameState.currentPlayer}</h2>
+      )}
+      {gameState && gameState.winner && <h2> Winner: {gameState.winner}</h2>}
+      {gameState && gameState.draw === "true" && <h2> It's a draw! </h2>}
       {gameState && (
         <Board
           board={gameState.board}

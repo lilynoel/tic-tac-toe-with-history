@@ -17,7 +17,6 @@ const GameList = () => {
     // create a new game
     createNewGame(nextNum).then((response) => setCount(count + 1));
   };
-  console.log(games);
   useEffect(() => {
     // fetch all games from collection and set into state.
     getAllGames().then((response) => setGames(response.sort(sortByGameNumber)));
@@ -28,7 +27,6 @@ const GameList = () => {
       .depthParameter(1)
       .toPromise()
       .then((response) => {
-        console.log(response);
       });
   }, [count]);
   return (
