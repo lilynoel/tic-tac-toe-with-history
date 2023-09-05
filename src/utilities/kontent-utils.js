@@ -84,7 +84,7 @@ export async function createNewGame(num) {
   // updates content of freshly created game.
   const game = await updateGameById(id, defaultState);
   await publishById(id);
-  return game;
+  return response;
 }
 
 // function to generate new game number
