@@ -6,9 +6,20 @@ import {
 } from "../../utilities/kontent-utils";
 import styles from "./styles.module.scss";
 
-const Cell = ({ symbol, coordinate, gameState, setGameState }) => {
+const Cell = ({
+  symbol,
+  coordinate,
+  gameState,
+  setGameState,
+  setStep,
+  step,
+  maxStep,
+}) => {
   // not quite finished. Needs to create move.
   const updateBoard = async (index) => {
+    if (step !== maxStep) {
+      return
+    }
     if (gameState.winner) {
       return;
     }
@@ -44,6 +55,7 @@ const Cell = ({ symbol, coordinate, gameState, setGameState }) => {
       await updateGameToDraw(gameState.id);
       return setGameState(updatedState);
     } else {
+      setStep((step) => step + 1);
       setGameState({
         ...gameState,
         board: copy,
