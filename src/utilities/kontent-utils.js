@@ -40,7 +40,7 @@ export async function getGameById(codename) {
   // turn data into board array.
   const board = translateMovesToBoard(moves);
   // useable data for react.
-  return { winner, draw, currentPlayer, board, id };
+  return { winner, draw, currentPlayer, board, id, moves };
 }
 
 // function to get an individual move by id
@@ -53,7 +53,7 @@ function getMoveById(id) {
 }
 
 // function to translate moves to the board
-function translateMovesToBoard(moves) {
+export function translateMovesToBoard(moves) {
   const board = Array(9).fill("");
   moves.forEach((move) => {
     board[move.coordinate] = move.symbol;
