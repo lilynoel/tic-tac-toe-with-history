@@ -18,6 +18,7 @@ const GameList = () => {
     // create a new game
     createNewGame(nextNum).then((response) => {
       setLoading(true);
+      // wait a few seconds for game to be published, then redirect to game page.
       setTimeout(() => {
         navigate("/games/" + response.data.codename);
       }, 2000);
@@ -27,13 +28,7 @@ const GameList = () => {
   useEffect(() => {
     // fetch all games from collection and set into state.
     getAllGames().then((response) => setGames(response.sort(sortByGameNumber)));
-    // this is a hack to refresh page. will fix :-)
-    deliveryClient
-      // retrieves game 1, and all linked items attached to game 1.
-      .item("game_1")
-      .depthParameter(1)
-      .toPromise()
-      .then((response) => {});
+
   }, []);
   return (
     <>

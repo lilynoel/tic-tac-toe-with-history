@@ -1,12 +1,8 @@
 import client, { deliveryClient } from "../config/client";
 import { v4 as uuidv4 } from "uuid";
 
+// Using the delivery client to fetch all items that are of the "game" content type. 
 export async function getAllGames() {
-  // const allItems = await client.listContentItems().toPromise();
-  // // filtering all items by collection. Is there a better way to do this with MAPI?
-  // const games = allItems.data.items.filter(
-  //   (item) => item.collection.id === "e3cca0c7-4e62-42fa-9d6a-222137b3a2e7"
-  // );
   const response = await deliveryClient
     .items()
     .equalsFilter("system.type", "game")
@@ -43,15 +39,6 @@ export async function getGameById(codename) {
   return { winner, draw, currentPlayer, board, id, moves };
 }
 
-// function to get an individual move by id
-function getMoveById(id) {
-  return client
-    .viewLanguageVariant()
-    .byItemId(id)
-    .byLanguageCodename("default")
-    .toPromise();
-}
-
 // function to translate moves to the board
 export function translateMovesToBoard(moves) {
   const board = Array(9).fill("");
@@ -77,8 +64,7 @@ export async function createNewGame(num) {
   const defaultState = {
     draw: "false",
     winner: "",
-    // randomly generates starting player (usually chooses "X" though?),
-    // doesn't seem to be equally half and half, needs more attention.
+    // randomly generates starting player.
     currentPlayer: Math.random() > 0.5 ? "X" : "O",
   };
   // updates content of freshly created game.
@@ -125,11 +111,13 @@ export async function updateGameById(id, gameState) {
   return response;
 }
 
+// This function creates a move and links it to a game by id. 
 export async function createMove(gameId, coordinate, symbol, gameState) {
   try {
     const response = await client
       .addContentItem()
       .withData({
+        // To ensure unique name for each move. 
         name: uuidv4(),
         coordinate: coordinate,
         symbol: symbol,
@@ -139,6 +127,8 @@ export async function createMove(gameId, coordinate, symbol, gameState) {
       .toPromise();
     const { id } = response.data;
     const move = updateMoveById(id, { symbol, coordinate });
+    // This function links the move to the id. It involves several steps.
+    // See function for more details. 
     const updatedGameResponse = await linkMoveToGame(gameId, id, gameState);
     return updatedGameResponse;
   } catch (e) {
@@ -146,6 +136,7 @@ export async function createMove(gameId, coordinate, symbol, gameState) {
   }
 }
 
+// This updates the move to set symbol and coordinate. 
 async function updateMoveById(id, data) {
   const response = await client
     .upsertLanguageVariant()
@@ -168,6 +159,7 @@ async function updateMoveById(id, data) {
     .toPromise();
 }
 
+// This will publish any item by its id.
 async function publishById(id) {
   const response = await client
     .publishLanguageVariant()
@@ -178,6 +170,7 @@ async function publishById(id) {
   return response;
 }
 
+// This will create a new version of the content item, it's workflow step will be draft.
 async function createNewVersion(gameId) {
   const response = await client
     .createNewVersionOfLanguageVariant()
@@ -187,16 +180,21 @@ async function createNewVersion(gameId) {
   return response;
 }
 
+// This function will link a newly created move to an existing game. 
 async function linkMoveToGame(gameId, moveId, gameState) {
   const gameResponse = await client
     .viewLanguageVariant()
     .byItemId(gameId)
     .byLanguageCodename("default")
     .toPromise();
+  // Get the id's of the moves already linked to a game. 
   const moves = gameResponse.data.elements[3].value.map((move) => move.id);
+  // Add the id from the new move to list of moves.
   moves.push(moveId);
+  // Need to create a new version because can't update an already published game.
   await createNewVersion(gameId);
   const { currentPlayer } = gameState;
+  // Switch player for next move.
   const newPlayer = currentPlayer === "X" ? "O" : "X";
   const response = await client
     .upsertLanguageVariant()
@@ -205,10 +203,12 @@ async function linkMoveToGame(gameId, moveId, gameState) {
     .withData((builder) => {
       return {
         elements: [
+          // Recreate linked items using new move id. 
           builder.linkedItemsElement({
             element: { codename: "move" },
             value: moves.map((id) => ({ id })),
           }),
+          // Update current player.
           builder.textElement({
             element: { codename: "current_player" },
             value: newPlayer,
@@ -217,11 +217,13 @@ async function linkMoveToGame(gameId, moveId, gameState) {
       };
     })
     .toPromise();
+  // Publish new game version and new move so they can be retrieved by delivery API. 
   const newPublishedGameResponse = await publishById(gameId);
   await publishById(moveId);
   return newPublishedGameResponse;
 }
 
+// Updates the game to show winner. Needs to create a new version and publish. 
 export async function updateGameToWon(gameId, symbol) {
   await createNewVersion(gameId);
   const response = await client
@@ -242,6 +244,7 @@ export async function updateGameToWon(gameId, symbol) {
   await publishById(gameId);
 }
 
+// Updates the game to reflect a draw. 
 export async function updateGameToDraw(gameId) {
   await createNewVersion(gameId);
   const response = await client

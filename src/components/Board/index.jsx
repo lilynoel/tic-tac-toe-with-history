@@ -6,13 +6,13 @@ const Board = ({ board, gameState, setGameState, setStep, step, maxStep }) => {
   return (
     <section className={styles.board}>
       {board.map((symbol, index) => (
+        // passing game state and other props to be used in cell.
         <Cell
           step={step}
           maxStep={maxStep}
           key={index}
           coordinate={index}
           symbol={symbol}
-          // passing game state and setter into cell.
           setStep={setStep}
           gameState={gameState}
           setGameState={setGameState}

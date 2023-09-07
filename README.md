@@ -1,17 +1,13 @@
 # Tic Tac Toe (with history!)
 
-Initially I created a version of Tic Tac Toe that was a single game, 
-https://github.com/lilynoel/react-tic-tac-toe
+- GameList fetches all games from Games Collection in Kontent project and renders links to each game. (link to gamelist > index.jsx line 29)
 
+- Game uses params (link to game > index.jsx line 13) to fetch content item by codename using the delivery API. Each game has a current player, winner and draw element. But moves, are linked content items from the content model. Moves are resolved by the delivery API. 
 
-Original approach did not meet the project spec.
+- All Kontent.ai related functions are in utils (kontent-utils.js link). Functions to fetch data use the delivery API, functions to create and update data use the management API. 
 
-This approach uses much more Kontent.ai functionality (creating new content items, fetching all content items, using collections). This application uses React Router DOM to support multiple pages. 
+- Move history is handled with local state within the game component. A slice of the moves data is taken based on the step state. (game > index.jsx, line 33 link) This data renders the board. 
 
-- GameList fetches all games from Games Collection in Kontent project and renders links to each game. 
+- There is a bug where need to refresh after creating a move. fix is WIP. Time to publish is unpredictable. 
 
-- Game uses params to fetch content item by id. Each game has a current player, winner and draw element. But moves, are linked content items from the content model. This is a work in progress, moves can be added through Kontent.ai UI, and do render successfully, but there is no functionality to create new moves through the app yet. 
-
-- All Kontent related functions are in utils (kontent-utils).
-
-
+- Not styled yet 
