@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { checkWinner, checkDraw } from "../../utilities/game-utils";
 import {
   createMove,
+  getGameById,
   updateGameToDraw,
   updateGameToWon,
 } from "../../utilities/kontent-utils";
 import styles from "./styles.module.scss";
+import { useParams } from "react-router-dom";
 
 const Cell = ({
   symbol,
@@ -15,7 +18,8 @@ const Cell = ({
   step,
   maxStep,
 }) => {
-
+  const [loading, setLoading] = useState(false);
+  const { id } = useParams();
   const updateBoard = async (index) => {
     // don't allow moves to be created out of step so moves are not overwritten.
     if (step !== maxStep) {
@@ -26,6 +30,9 @@ const Cell = ({
       return;
     }
     const copy = [...gameState.board];
+
+    // set loading state before sending request
+    setLoading(true);
 
     // don't overwrite existing moves.
     if (copy[index]) {
@@ -61,7 +68,7 @@ const Cell = ({
       };
       // if game is draw, update kontent.ai
       await updateGameToDraw(gameState.id);
-      return setGameState(updatedState);
+      setGameState(updatedState);
     } else {
       // otherwise, increase step and update game state.
       setStep((step) => step + 1);
@@ -71,10 +78,27 @@ const Cell = ({
         currentPlayer: gameState.currentPlayer === "X" ? "O" : "X",
       });
     }
+    setTimeout(() => {
+      // getGameById(id).then((response) => {
+
+      // Even manually fetching doesn't give published response, have to physically refresh page.
+      //   console.log(response)
+      //   setGameState(response)
+      // });
+
+      // This should manually refresh the page, but delivery API sends cached response?
+      // In theory this should work but it doesn't...
+      document.location.reload();
+    }, 6000);
   };
+
+  // Grey out background of cell while loading is true.
+  const classNames = [styles.cell, `${loading ? styles.loading : ""}`].join(
+    " "
+  );
   return (
-    // calls update board function when cell is clicked. 
-    <div onClick={() => updateBoard(coordinate)} className={styles.cell}>
+    // calls update board function when cell is clicked.
+    <div onClick={() => updateBoard(coordinate)} className={classNames}>
       {symbol}
     </div>
   );

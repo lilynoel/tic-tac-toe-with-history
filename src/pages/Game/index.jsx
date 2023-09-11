@@ -59,6 +59,7 @@ function Game() {
       {gameState && gameState.draw === "true" && <h2> It's a draw! </h2>}
       {gameState && (
         <Board
+          
           step={step}
           maxStep={maxStep}
           board={board}
