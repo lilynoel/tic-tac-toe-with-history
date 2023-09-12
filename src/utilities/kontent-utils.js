@@ -1,7 +1,7 @@
 import client, { deliveryClient } from "../config/client";
 import { v4 as uuidv4 } from "uuid";
 
-// Using the delivery client to fetch all items that are of the "game" content type. 
+// Using the delivery client to fetch all items that are of the "game" content type.
 export async function getAllGames() {
   const response = await deliveryClient
     .items()
@@ -111,13 +111,13 @@ export async function updateGameById(id, gameState) {
   return response;
 }
 
-// This function creates a move and links it to a game by id. 
+// This function creates a move and links it to a game by id.
 export async function createMove(gameId, coordinate, symbol, gameState) {
   try {
     const response = await client
       .addContentItem()
       .withData({
-        // To ensure unique name for each move. 
+        // To ensure unique name for each move.
         name: uuidv4(),
         coordinate: coordinate,
         symbol: symbol,
@@ -128,15 +128,20 @@ export async function createMove(gameId, coordinate, symbol, gameState) {
     const { id } = response.data;
     const move = updateMoveById(id, { symbol, coordinate });
     // This function links the move to the id. It involves several steps.
-    // See function for more details. 
+    // See function for more details.
     const updatedGameResponse = await linkMoveToGame(gameId, id, gameState);
-    return updatedGameResponse;
+    // copy existing game moves.
+    const moves = [...gameState.moves];
+    // add new move to array. 
+    moves.push({ coordinate, symbol });
+    // return moves along with response. 
+    return [updatedGameResponse, moves];
   } catch (e) {
     console.log(e);
   }
 }
 
-// This updates the move to set symbol and coordinate. 
+// This updates the move to set symbol and coordinate.
 async function updateMoveById(id, data) {
   const response = await client
     .upsertLanguageVariant()
@@ -180,14 +185,14 @@ async function createNewVersion(gameId) {
   return response;
 }
 
-// This function will link a newly created move to an existing game. 
+// This function will link a newly created move to an existing game.
 async function linkMoveToGame(gameId, moveId, gameState) {
   const gameResponse = await client
     .viewLanguageVariant()
     .byItemId(gameId)
     .byLanguageCodename("default")
     .toPromise();
-  // Get the id's of the moves already linked to a game. 
+  // Get the id's of the moves already linked to a game.
   const moves = gameResponse.data.elements[3].value.map((move) => move.id);
   // Add the id from the new move to list of moves.
   moves.push(moveId);
@@ -203,7 +208,7 @@ async function linkMoveToGame(gameId, moveId, gameState) {
     .withData((builder) => {
       return {
         elements: [
-          // Recreate linked items using new move id. 
+          // Recreate linked items using new move id.
           builder.linkedItemsElement({
             element: { codename: "move" },
             value: moves.map((id) => ({ id })),
@@ -217,13 +222,17 @@ async function linkMoveToGame(gameId, moveId, gameState) {
       };
     })
     .toPromise();
-  // Publish new game version and new move so they can be retrieved by delivery API. 
+  // Publish new game version and new move so they can be retrieved by delivery API.
   const newPublishedGameResponse = await publishById(gameId);
   await publishById(moveId);
+  // console.log(gameResponse);
+  // const updatedGame = await getGameById(gameResponse.data._raw.item.codename);
+  // return updatedGame;
+  console.log(newPublishedGameResponse);
   return newPublishedGameResponse;
 }
 
-// Updates the game to show winner. Needs to create a new version and publish. 
+// Updates the game to show winner. Needs to create a new version and publish.
 export async function updateGameToWon(gameId, symbol) {
   await createNewVersion(gameId);
   const response = await client
@@ -244,7 +253,7 @@ export async function updateGameToWon(gameId, symbol) {
   await publishById(gameId);
 }
 
-// Updates the game to reflect a draw. 
+// Updates the game to reflect a draw.
 export async function updateGameToDraw(gameId) {
   await createNewVersion(gameId);
   const response = await client

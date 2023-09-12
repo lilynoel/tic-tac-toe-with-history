@@ -1,13 +1,14 @@
 import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { checkWinner, checkDraw } from "../../utilities/game-utils";
 import {
   createMove,
-  getGameById,
+  translateMovesToBoard,
   updateGameToDraw,
   updateGameToWon,
 } from "../../utilities/kontent-utils";
 import styles from "./styles.module.scss";
-import { useParams } from "react-router-dom";
 
 const Cell = ({
   symbol,
@@ -19,7 +20,7 @@ const Cell = ({
   maxStep,
 }) => {
   const [loading, setLoading] = useState(false);
-  const { id } = useParams();
+
   const updateBoard = async (index) => {
     // don't allow moves to be created out of step so moves are not overwritten.
     if (step !== maxStep) {
@@ -29,77 +30,66 @@ const Cell = ({
     if (gameState.winner) {
       return;
     }
-    const copy = [...gameState.board];
-
-    // set loading state before sending request
-    setLoading(true);
+    const currentMoves = [...gameState.moves];
+    const copy = translateMovesToBoard(currentMoves);
 
     // don't overwrite existing moves.
     if (copy[index]) {
       return;
     }
     copy[index] = gameState.currentPlayer;
-
+    setLoading(true);
     // create move in kontent.ai
-    const response = await createMove(
+    // get updated moves back from kontent.ai
+    const [response, moves] = await createMove(
       gameState.id,
       coordinate,
       gameState.currentPlayer,
       gameState
     );
-    console.log(response, gameState.id);
+    const responseStatus = response?.debug?.response?.rawResponse?.status;
+    // if there is an error, do not update game state.
+    if (!responseStatus || responseStatus < 200 || responseStatus > 399) {
+      return;
+    }
+
     // check if latest move finishes game.
     const winner = checkWinner(copy);
     const draw = checkDraw(copy);
+    console.log(gameState.board, copy);
+    // create new state object.
+    const newState = { ...gameState };
+    // add updated moves to new state object.
+    newState.moves = moves;
+    // if there is a winner, add winner. Add draw if there is a draw.
     if (winner) {
-      const updatedState = {
-        ...gameState,
-        board: copy,
-        winner: gameState.currentPlayer,
-      };
-      // if game is won, update kontent.ai
-      updateGameToWon(gameState.id, gameState.currentPlayer);
-      setGameState(updatedState);
+      newState.winner = winner;
+      // update game in kontent.ai to won, if there is a winner.
+      await updateGameToWon(gameState.id, gameState.currentPlayer);
     } else if (draw) {
-      const updatedState = {
-        ...gameState,
-        board: copy,
-        draw: "true",
-      };
-      // if game is draw, update kontent.ai
+      newState.draw = "true";
+      // update game in kontent.ai to draw, if there is a draw.
       await updateGameToDraw(gameState.id);
-      setGameState(updatedState);
-    } else {
-      // otherwise, increase step and update game state.
-      setStep((step) => step + 1);
-      setGameState({
-        ...gameState,
-        board: copy,
-        currentPlayer: gameState.currentPlayer === "X" ? "O" : "X",
-      });
     }
-    setTimeout(() => {
-      // getGameById(id).then((response) => {
-
-      // Even manually fetching doesn't give published response, have to physically refresh page.
-      //   console.log(response)
-      //   setGameState(response)
-      // });
-
-      // This should manually refresh the page, but delivery API sends cached response?
-      // In theory this should work but it doesn't...
-      document.location.reload();
-    }, 6000);
+    // if the game isn't won or draw, switch player.
+    if (!newState.winner && newState.draw === "false") {
+      newState.currentPlayer = newState.currentPlayer === "X" ? "O" : "X";
+    }
+    // update step and state.
+    setStep((step) => step + 1);
+    setGameState(newState);
+    // turn off loading.
+    setLoading(false);
   };
 
-  // Grey out background of cell while loading is true.
-  const classNames = [styles.cell, `${loading ? styles.loading : ""}`].join(
-    " "
-  );
   return (
     // calls update board function when cell is clicked.
-    <div onClick={() => updateBoard(coordinate)} className={classNames}>
-      {symbol}
+    <div
+      style={loading ? { backgroundColor: "grey" } : {}}
+      onClick={() => updateBoard(coordinate)}
+      className={styles.cell}
+    >
+      {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : symbol}
     </div>
   );
 };

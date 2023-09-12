@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import {
   createNewGame,
   getAllGames,
@@ -28,16 +30,27 @@ const GameList = () => {
   useEffect(() => {
     // fetch all games from collection and set into state.
     getAllGames().then((response) => setGames(response.sort(sortByGameNumber)));
-
   }, []);
   return (
     <>
-      {loading && <p>Loading...</p>}
+      {loading && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <FontAwesomeIcon icon={faSpinner} spin />
+          <p>Loading...</p>
+        </div>
+      )}
       {!loading && (
         <>
-          <h1> This is the game list! </h1>
+          <h1> Tic Tac Toe! </h1>
           <button onClick={onButtonClick}> Create Game </button>
-          <br></br>
+          <h3>Game list:</h3>
           <ul>
             {games.map((game) => {
               return (
