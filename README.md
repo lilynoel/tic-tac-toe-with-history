@@ -1,5 +1,7 @@
 # Tic Tac Toe (with history!)
 
+[Try it out!](https://tictactoe-with-history.netlify.app)
+
 - GameList fetches all games from Games Collection in Kontent project and renders links to each game. (gamelist > index.jsx line 29)
 
 - Game uses params (game > index.jsx line 13) to fetch content item by codename using the delivery API. Each game has a current player, winner and draw element. But moves, are linked content items from the content model. Moves are resolved by the delivery API. 
